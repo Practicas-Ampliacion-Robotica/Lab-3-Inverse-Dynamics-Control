@@ -151,15 +151,10 @@
 
             // Calculate control torque using the dynamic model: torque = M * q_ddot + C * q_dot + Fb * q_dot + g
             Eigen::VectorXd torque(2);
-
             Eigen::VectorXd q_dot(2);
             q_dot << q_dot1, q_dot2;
 
-            // Calculate joint acceleration using the dynamic model: M * q_ddot = torque - C * q_dot - Fb * joint_velocities_ - g + tau_ext
-            Eigen::VectorXd q_ddot(2);
-            q_ddot << M.inverse() * (joint_torques_ - C - Fb * joint_velocities_ - g_vec + tau_ext);
-
-            torque << M * q_ddot + C + Fb * q_dot + g_vec;
+            torque << M * desired_joint_accelerations_ + C + Fb * q_dot + g_vec;
 
             return torque;
         }
