@@ -1,0 +1,12 @@
+Series,Current,Min,Max,Average
+Start Time,-1.79769e+308
+End Time,1.79769e+308
+Current Time,1.77929e+09
+/joint_accelerations/data[0],-0.000000,-0.217559,0.065039,-0.000219
+/joint_accelerations/data[1],0.000000,-1.785000,0.535321,-0.001849
+/joint_accelerations/layout/data_offset,0.000000,0.000000,0.000000,0.000000
+/joint_states/header/stamp,1779288962.910470,1779288962.910470,1779288976.969436,1779288969.939971
+/joint_states/joint_1/position,1.000000,0.750070,1.000000,0.886735
+/joint_states/joint_1/velocity,-0.000000,-0.117471,0.019113,-0.015060
+/joint_states/joint_2/position,1.000000,-1.077240,1.000000,0.059217
+/joint_states/joint_2/velocity,0.000000,-0.976862,0.159742,-0.125011
