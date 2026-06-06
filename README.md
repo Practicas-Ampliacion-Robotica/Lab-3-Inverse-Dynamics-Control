@@ -67,15 +67,12 @@ $$
 
 Al enviar (45º, 45º) como consigna de las variables articulares se obtiene el siguiente comportamiento del manipulador:
 
-FOTO 1
-
-![Resultado de la tarea 1.](images/tarea1.png)
+![Resultado de la tarea 1.](images/compensacion_gravedad.png)
 
 Por otra parte, se comprueba que al someter el efector final a otras fuerzas externas, el robot es empujado en el sentido de la misma, ignorando su propio peso, por lo que no cae.
 
-VIDEO 1
+![Demostración](images/compensacion_gravedad.gif)
 
-FOTOS GRAFICOS
 
 ---
 
