@@ -6,7 +6,7 @@ El control por movimiento de los manipuladores móviles requieren considerar fue
 
 ---
 
-## Tarea 1: Compensación de la gravedad
+## Tarea 1: Compensación de la Gravedad
 
 En este ejercicio se solicita la implementación de un sistema que compense la fuerza de la gravedad, permitiendo que el manipulador se mantenga en la posición requerida sin "caerse" por la aceleración que esta provoca. Si se le aplica cualquier otra fuerza externa, el control no la compensaría (Para ello se realizará la tarea 2).
 
@@ -176,9 +176,112 @@ Posteriormente, se crea su correspondiente `dynamics_cancellation_launch.py` y s
 
 ### Resultados
 
+Se le envía al manipulador la trayectoria pedida en el guion y resulta el siguiente movimiento:
 
+![Demostración](images/cancel_dynamics.gif)
+
+![Gráficas](images/graficas_cancel_dynamics.png)
+
+Adicionalmente, esta es la conexión de topics: 
+
+![Topics](images/rqt_cancel_dynamics.png)
 
 ---
 
-### Conclusiones:
+## Tarea 3: Experimentos
+
+En primer lugar, se propone el estudio de los dos controladores anteriores para valores erróneos de los parámetros dinámicos del manipulador, los reales son:
+
+```cpp
+
+uma_arm_dynamics:
+  ros__parameters:
+    frequency: 1000.0
+    m1: 3.0
+    m2: 2.0
+    l1: 1.0
+    l2: 0.6
+    b1: 5.0
+    b2: 5.0
+    g: 9.81
+    q0: [0.785398, -0.785398]
+
+```
+
+### Compensación de la Gravedad
+
+Se modifican los valores de $m1$, $m2$, $l1$ y $l2$:
+
+```cpp
+
+gravity_compensation:
+  ros__parameters:
+    frequency: 1000.0
+    m1: 5.0
+    m2: 5.0
+    l1: 5.0
+    l2: 5.0
+    b1: 5.0
+    b2: 5.0
+    g: 9.81
+    q0: [0.785398, -0.785398]
+
+```
+
+El resultado es un manipulador que no se queda inmóvil en la posición deseada, el par enviado depende de estos parámetros érroneos: Al haber aumentado el valor de todos ellos, el resultado es un mayor torque, haciendo que el manipulador intente elevarse más de lo que necesita para compensar el efecto de la gravedad. Esta dependencia del par respecto a estos parámetros se podía predecir observando el anterior fragmento de código: 
+
+```cpp
+
+g_vec << (m1_ + m2_) * l1_ * g_ * cos(q1) + m2_ * g_ * l2_ * cos(q1 + q2),
+    m2_ * g_ * l2_ * cos(q1 + q2);
+
+```
+
+![Experimento 1](images/exp_gc.gif)
+
+---
+
+### Cancelación Dinámica Completa
+
+En este experimento se modificarán los parámetros de la siguiente forma:
+
+```cpp
+
+dynamics_cancellation:
+  ros__parameters:
+    frequency: 1000.0
+    m1: 4.0
+    m2: 1.0
+    l1: 1.5
+    l2: 1.0
+    b1: 5.0
+    b2: 5.0
+    g: 9.81
+    q0: [0.785398, -0.785398]
+
+```
+
+En esta ocasión, se ha optado por modificar aleatoriamente todos ellos, provocando incluso inestabilidad en esta ocasión:
+
+![Experimento 1](images/exp_cd.gif)
+
+La explicación es análoga a la anterior, el torque depende de todos los parámetros modificados.
+
+---
+
+FALTA RESPONDER: What is the behavior of the robot under the inverse dynamics controller when you apply virtual forces to the EE? Use videos and/or plots to support your answer.
+
+## Tarea 4: 
+
+---
+
+### Fundamentos teóricos
+
+---
+
+### Resultados
+
+---
+
+## Conclusiones:
 
