@@ -81,7 +81,7 @@ private:
     {
         // Declarar posición deseada: 0.785, -0.785 1.0, 1.0
         Eigen::VectorXd joint_desired_positions_(2);
-        joint_desired_positions_ << 0.785, -0.785;
+        joint_desired_positions_ << 1.0, 1.0;
 
         // Control gains
         Eigen::MatrixXd Kp_;
