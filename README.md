@@ -113,13 +113,17 @@ $$
 \ddot{q} = \ddot{q}_d
 $$
 
-Otorgando la posición articular deseada. Este esquema de control es el siguiente:
+Al realizar la transformadad de Laplace, se obtiene la función de transferencia:
+
+$$
+\frac{Q(s)}{\ddot Q_d(s)} = \frac{1}{s^2}
+$$
+
+Se observa que para pasar de la aceleración angular a posición, necesita dos integradores, siendo la planta marginalmente estable. Su esquema de control el siguiente:
 
 ![Bucle Control tarea 2](images/bucle_cancel_dynamics.png)
 
-El cual, para pasar de la aceleración angular a posición, necesita dos integradores, siendo la planta marginalmente estable. Al añadir el control PD explicado previamente en un bucle cerrado, resulta un sistema de segundo orden, el cual, ante entrada escalón, cuenta con error nulo.
-
-Para implementar este control se modifica el método `cancel_dynamics()` con la dinámica proporcionada en el nodo `uma_arm_dynamics.cpp` y el cálculo del torque explicado anteriormente:
+Para implementar este sistema se modifica el método `cancel_dynamics()` con la dinámica proporcionada en el nodo `uma_arm_dynamics.cpp` y el cálculo del torque explicado anteriormente:
 
 ```cpp
 
@@ -179,6 +183,8 @@ Posteriormente, se crea su correspondiente `dynamics_cancellation_launch.py` y s
 Se le envía al manipulador la trayectoria pedida en el guion y resulta el siguiente movimiento:
 
 ![Demostración](images/cancel_dynamics.gif)
+
+Siendo sus gráficas de posición, aceleración y velocidad las esperadas:
 
 ![Gráficas](images/graficas_cancel_dynamics.png)
 
@@ -263,7 +269,7 @@ dynamics_cancellation:
 
 En esta ocasión, se ha optado por modificar aleatoriamente todos ellos, provocando incluso inestabilidad en esta ocasión:
 
-![Experimento 1](images/exp_cd.gif)
+![Experimento 2](images/exp_cd.gif)
 
 La explicación es análoga a la anterior, el torque depende de todos los parámetros modificados.
 
@@ -271,15 +277,139 @@ La explicación es análoga a la anterior, el torque depende de todos los parám
 
 FALTA RESPONDER: What is the behavior of the robot under the inverse dynamics controller when you apply virtual forces to the EE? Use videos and/or plots to support your answer.
 
-## Tarea 4: 
+### Cancelación Dinámica Completa: Aplicación de Fuerzas
+
+Anteriormente se ha estudiado la respuesta del control de cancelación de gravedad frente a fuerzas externas, no obstante, es significativo remarcar la respuesta del sistema con el controlador de cancelación de dinámica completa ante perturbaciones similares. Se realiza el experimento y se observa:
+
+![Experimento 3](images/exp_fuerzas_cd.gif)
+
+Resulta un sistema inestable, lo cual, tiene sentido con la información expuesta anteriormente: El sistema cuenta con dos integradores, haciéndolo críticamente inestable. Cualquier perturbación externa provocará la inestabilidad en el sistema.
+
+## Tarea 4: Cancelación Dinámica Completa + PD
+
+En vistas a garantizar la estabilidad del sistema, se añade un control PD, provocando que los integradores en bucle cerrado se transformen en polos negativos, garantizando la estabilidad. 
 
 ---
 
 ### Fundamentos teóricos
 
+La explicación es la siguiente:
+
+En el punto anterior se obtuvo:
+
+$$
+\ddot q = \ddot q_d
+$$
+
+Mientras que el controlador PD genera la aceleración deseada:
+
+$$
+\ddot q_d = K_p(q_d-q)+K_d(\dot q_d-\dot q)
+$$
+
+Al sustituir se obtiene:
+
+$$
+\ddot q = K_p(q_d-q)+K_d(\dot q_d-\dot q)
+$$
+
+Y al aplicar la transformada:
+
+$$
+\frac{Q(s)}{Q_d(s)} = \frac{K_d s + K_p} {s^2 + K_d s + K_p}
+$$
+
+Observándose plenamente esos dos polos negativos espuestos con anterioridad. El bucle de control resultante es:
+
+![Bucle con PD](images/bucle_pd.png)
+
+Para ello, es necesaria la siguiente modificación de los topics:
+
+![Topics con PD](images/rqt_pd.png)
+
+Las principales modificaciones son las siguientes:
+
+- Suscripción al topic `/joint_states` para recibir el estado articular actual.
+- Publicación al topic `/desired_joint_accelerations` para publicar la aceleración deseada calculada.
+
+Para ello se ha creado un nuevo nodo, `PD_controller.cpp`, con sus suscripciones correspondientes:
+
+```cpp
+
+// Create subscription to joint_torques
+subscription_joint_states_ = this->create_subscription<sensor_msgs::msg::JointState>(
+    "joint_states", 1, std::bind(&PDControllerNode::joint_states_callback, this, std::placeholders::_1));
+
+// Create publishers for joint torque
+publisher_topic_send_accelerations = this->create_publisher<std_msgs::msg::Float64MultiArray>("desired_joint_accelerations", 1);
+
+// Set the timer callback at a period (in milliseconds, multiply it by 1000)
+timer_ = this->create_wall_timer(
+    std::chrono::milliseconds(static_cast<int>(1000 / frequency)), std::bind(&PDControllerNode::timer_callback, this));
+
+```
+
+En esta ocasión, las aceleraciones enviadas deberán ser las calculadas en el método `PD_control()`:
+
+```cpp
+
+    // Timer callback - when there is a timer callback, computes the new joint acceleration, velocity and position and publishes them
+    void timer_callback()
+    {
+        // Calculate desired acceleration to cancel the dynamic effects
+        topic_send_accelerations = PD_control();
+
+        // Publish data
+        publish_data();
+    }
+
+```
+
+Este méotodo se define según el siguiente código:
+
+```cpp
+
+// Method to calculate joint acceleration
+Eigen::VectorXd PD_control()
+{
+    // Declarar posición deseada: 0.785, -0.785 1.0, 1.0
+    Eigen::VectorXd joint_desired_positions_(2);
+    joint_desired_positions_ << 1.0, 1.0;
+
+    // Control gains
+    Eigen::MatrixXd Kp_;
+    Kp_ = Eigen::MatrixXd::Identity(2,2) * 1;
+    Eigen::MatrixXd Kd_;
+    Kd_ = Eigen::MatrixXd::Identity(2,2) * 1;
+
+
+    // Calculate desired acceleration using PD control law: q_ddot_desired = Kp * (q_desired - q) + Kd * (q_dot_desired - q_dot)
+    Eigen::VectorXd y_;
+    y_ = Kp_ * (joint_desired_positions_ - joint_positions_) + Kd_ * (joint_desired_velocities_ - joint_velocities_) + joint_desired_accelerations_;
+
+    return y_;
+
+}
+
+```
+
+Donde se define una posición articular deseada, (1,1), los valores de $Kp$ y $Ki$ (calculados mediante prueba y error) y la ecuación del controlador PD. Más adelante, se definen las aceleraciones y velocidades deseadas:
+
+```cpp
+
+// Declarar velocidad y aceleración
+Eigen::VectorXd joint_desired_accelerations_ = Eigen::VectorXd::Zero(2);
+Eigen::VectorXd joint_desired_velocities_ = Eigen::VectorXd::Zero(2);
+
+```
+
 ---
 
 ### Resultados
+
+![Vídeo con PD](images/pd.gif)
+
+![Gráficas con PD](images/graficas_pd.png)
 
 ---
 
