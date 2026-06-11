@@ -81,6 +81,10 @@ Por otra parte, se comprueba con el comando `python3 wrench_trackbar_publisher.p
 
 ![Demostración](images/compensacion_gravedad.gif)
 
+Siendo su conexión de nodos:
+
+![Nodos Compensación Gravedad.](images/rqt_gc.png)
+
 ---
 
 ## Tarea 2: Cancelación Dinámica Completa
@@ -186,7 +190,7 @@ Se le envía al manipulador la trayectoria pedida en el guion y resulta el sigui
 
 Siendo sus gráficas de posición, aceleración y velocidad las esperadas:
 
-![Gráficas](images/graficas_cancel_dynamics.png)
+![Gráficas](images/graf_cd.png)
 
 Adicionalmente, esta es la conexión de topics: 
 
