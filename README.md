@@ -327,7 +327,7 @@ Observándose plenamente esos dos polos negativos espuestos con anterioridad. El
 
 ![Bucle con PD](images/bucle_pd.png)
 
-Para ello, es necesaria la siguiente modificación de los topics:
+Para ello, es necesaria la siguiente relación nodos-topics:
 
 ![Topics con PD](images/rqt_pd.png)
 
@@ -411,11 +411,22 @@ Eigen::VectorXd joint_desired_velocities_ = Eigen::VectorXd::Zero(2);
 
 ### Resultados
 
+Al ejecutar los paquetes de ROS2 el brazo sigue la consigna indicada:
+
 ![Vídeo con PD](images/pd.gif)
 
-![Gráficas con PD](images/graficas_pd.png)
+![Gráficas con PD](images/graf_pd.png)
+
+No obstante, lo realmente interesante es observar su comportamiento ante una perturbación externa:
+
+![Vídeo con PD y fuerzas externas](images/pd_f_lowres.gif)
+
+El brazo muestra cierta oposición a la fuerza ejecutada en el efector final, volviendo a la posición deseada tras dejar de aplicar esta fuerza. El manipulador no se inestabiliza ante la presencia de perturbaciones externas, cumpliendo así el objetivo previamente propuesto.
 
 ---
 
 ## Conclusiones:
 
+En esta práctica se ha implementado un controlador de dinámica inversa para un manipulador de dos grados de libertad. Se ha comprobado que la compensación de gravedad permite anular el efecto del peso del robot, mientras que la cancelación dinámica completa compensa además los efectos de inercia, Coriolis y fricción.
+
+Asimismo, se ha añadido un controlador PD para garantizar la estabilidad del sistema y mejorar el seguimiento de la referencia. Adicionalmente, se ha observado que el rendimiento del controlador depende de la precisión del modelo dinámico utilizado, ya que errores en los parámetros provocan desviaciones respecto al comportamiento ideal.
