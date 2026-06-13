@@ -2,13 +2,13 @@
 
 ## Introducción
 
-El control por movimiento de los manipuladores móviles requieren considerar fuerzas externas al sistema, así como la provocada por la gravedad, inercia, Coriolis, etc. Si no se tienen en cuenta estos efectos, el seguimiento de trayectorias del robot puede provocar errores significativos. En esta práctica se estudiará una técnica para compensar estas dinámicas no lineales del manipulador, el control por dinámica inversa (Inverse Dynamics Control), el cual, nos permitirá linealizar  el sistema, facilitando el diseño de controladores. El informe queda dividido en dos puntos: la compensación de gravedad y la cancelación dinámica completa (además de la fuerza de la gravedad, se compensan los efectos no lineales como la inercia, Coriolis y fricción).
+El control por movimiento de los manipuladores móviles requieren considerar fuerzas externas al sistema, así como la provocada por la gravedad, inercia, Coriolis, etc. Si no se tienen en cuenta estos efectos, el seguimiento de trayectorias del robot puede provocar errores significativos. En esta práctica se estudiará una técnica para compensar estas dinámicas no lineales del manipulador, el control por dinámica inversa (Inverse Dynamics Control), el cual, nos permitirá linealizar  el sistema, facilitando el diseño de controladores. El informe queda dividido principalmente en dos puntos: la compensación de gravedad y la cancelación dinámica completa (donde, además de la fuerza de la gravedad, se compensan los efectos no lineales como la inercia, Coriolis y fricción).
 
 ---
 
 ## Tarea 1: Compensación de la Gravedad
 
-En este ejercicio se solicita la implementación de un sistema que compense la fuerza de la gravedad, permitiendo que el manipulador se mantenga en la posición requerida sin "caerse" por la aceleración que esta provoca. Si se le aplica cualquier otra fuerza externa, el control no la compensaría (Para ello se realizará la tarea 2).
+En este ejercicio se solicita la implementación de un sistema que compense la fuerza de la gravedad, permitiendo que el manipulador se mantenga en la posición requerida sin "caerse" por la aceleración que esta provoca. Si se le aplica cualquier otra fuerza externa, el control no la compensaría (Para ello se realizarán posteriores estudios).
 
 ### Fundamentos teóricos
 
@@ -32,7 +32,7 @@ $$
 \tau = g(q)
 $$
 
-Por ello, se crea un nodo ROS2 llamado `gravity_compensation.cpp` (con su correspondiente `gravity_compensation_launch.py` y modificación del `CMakeLists.txt`):
+Por ello, se crea un nodo ROS2 llamado `gravity_compensation.cpp` (con su correspondiente `gravity_compensation_launch.py` y modificación del `CMakeLists.txt`). Su método encargado del cálculo es el siguiente:
 
 ```cpp
 // Method to calculate the desired joint torques
@@ -77,7 +77,7 @@ Al enviar (45º, 45º) como consigna de las variables articulares se obtiene el 
 
 ![Resultado de la tarea 1.](images/compensacion_gravedad.png)
 
-Por otra parte, se comprueba con el comando `python3 wrench_trackbar_publisher.py` que al someter el efector final a otras fuerzas externas, el robot es empujado en el sentido de la misma, ignorando su propio peso, por lo que no cae.
+Por otra parte, se comprueba con el comando `python3 wrench_trackbar_publisher.py` que, al someter el efector final a otras fuerzas externas, el robot es empujado en el sentido de la misma, ignorando su propio peso, por lo que no cae.
 
 ![Demostración](images/compensacion_gravedad.gif)
 
@@ -89,7 +89,7 @@ Siendo su conexión de nodos:
 
 ## Tarea 2: Cancelación Dinámica Completa
 
-Esta segunda tarea trata de compensar las dinámicas no lineales del manipulador, así como la fuerza centrífuga, Coriolis y fricción). A continuación se detallan los pasos para ello.
+El objetivo en esta segunda tarea trata de compensar las dinámicas no lineales del manipulador, así como la fuerza centrífuga, Coriolis y fricción. A continuación se detallan los pasos para ello.
 
 ### Fundamentos teóricos
 
@@ -117,17 +117,17 @@ $$
 \ddot{q} = \ddot{q}_d
 $$
 
-Al realizar la transformadad de Laplace, se obtiene la función de transferencia:
+Si se realiza la transformada de Laplace, se obtiene la función de transferencia:
 
 $$
 \frac{Q(s)}{\ddot Q_d(s)} = \frac{1}{s^2}
 $$
 
-Se observa que para pasar de la aceleración angular a posición, necesita dos integradores, siendo la planta marginalmente estable. Su esquema de control el siguiente:
+Se observa que para pasar de aceleración angular a posición, el sistema necesita dos integradores, siendo la planta marginalmente estable. Su esquema de control el siguiente:
 
 ![Bucle Control tarea 2](images/bucle_cancel_dynamics.png)
 
-Para implementar este sistema se modifica el método `cancel_dynamics()` con la dinámica proporcionada en el nodo `uma_arm_dynamics.cpp` y el cálculo del torque explicado anteriormente:
+Para implementarlo se crea el nodo `dynamics_cancellation.cpp` a partir del anterior, modificando el método `cancel_dynamics()` con la dinámica proporcionada en el nodo `uma_arm_dynamics.cpp` y el cálculo del torque explicado anteriormente:
 
 ```cpp
 
@@ -279,25 +279,21 @@ La explicación es análoga a la anterior, el torque depende de todos los parám
 
 ---
 
-FALTA RESPONDER: What is the behavior of the robot under the inverse dynamics controller when you apply virtual forces to the EE? Use videos and/or plots to support your answer.
-
 ### Cancelación Dinámica Completa: Aplicación de Fuerzas
 
 Anteriormente se ha estudiado la respuesta del control de cancelación de gravedad frente a fuerzas externas, no obstante, es significativo remarcar la respuesta del sistema con el controlador de cancelación de dinámica completa ante perturbaciones similares. Se realiza el experimento y se observa:
 
 ![Experimento 3](images/exp_fuerzas_cd.gif)
 
-Resulta un sistema inestable, lo cual, tiene sentido con la información expuesta anteriormente: El sistema cuenta con dos integradores, haciéndolo críticamente inestable. Cualquier perturbación externa provocará la inestabilidad en el sistema.
+El resultado es un sistema inestable, ya que, según se expresó anteriormente El bucle cuenta con dos integradores, haciéndolo críticamente inestable. Cualquier perturbación externa provocará la inestabilidad en el sistema.
 
 ## Tarea 4: Cancelación Dinámica Completa + PD
 
-En vistas a garantizar la estabilidad del sistema, se añade un control PD, provocando que los integradores en bucle cerrado se transformen en polos negativos, garantizando la estabilidad. 
+En vistas a garantizar la estabilidad del sistema, se añade un control PD, provocando que los integradores en bucle cerrado se transformen en polos negativos, logrando la estabilidad. 
 
 ---
 
 ### Fundamentos teóricos
-
-La explicación es la siguiente:
 
 En el punto anterior se obtuvo:
 
@@ -327,7 +323,7 @@ Observándose plenamente esos dos polos negativos espuestos con anterioridad. El
 
 ![Bucle con PD](images/bucle_pd.png)
 
-Para ello, es necesaria la siguiente relación nodos-topics:
+Por ello, es necesaria la siguiente relación nodos-topics:
 
 ![Topics con PD](images/rqt_pd.png)
 
@@ -336,7 +332,7 @@ Las principales modificaciones son las siguientes:
 - Suscripción al topic `/joint_states` para recibir el estado articular actual.
 - Publicación al topic `/desired_joint_accelerations` para publicar la aceleración deseada calculada.
 
-Para ello se ha creado un nuevo nodo, `PD_controller.cpp`, con sus suscripciones correspondientes:
+Análogo a los anteriores, se crea un nuevo nodo, `PD_controller.cpp`, con sus suscripciones correspondientes:
 
 ```cpp
 
@@ -369,7 +365,7 @@ En esta ocasión, las aceleraciones enviadas deberán ser las calculadas en el m
 
 ```
 
-Este méotodo se define según el siguiente código:
+En este método se implementa el cálculo del controlador:
 
 ```cpp
 
@@ -397,7 +393,7 @@ Eigen::VectorXd PD_control()
 
 ```
 
-Donde se define una posición articular deseada, (1,1), los valores de $Kp$ y $Ki$ (calculados mediante prueba y error) y la ecuación del controlador PD. Más adelante, se definen las aceleraciones y velocidades deseadas:
+Donde se define una posición articular deseada, (1,1), los valores de $Kp$ y $Ki$ (calculados mediante prueba y error) y la ecuación del controlador PD. Más adelante, se indican las aceleraciones y velocidades deseadas:
 
 ```cpp
 
@@ -414,6 +410,8 @@ Eigen::VectorXd joint_desired_velocities_ = Eigen::VectorXd::Zero(2);
 Al ejecutar los paquetes de ROS2 el brazo sigue la consigna indicada:
 
 ![Vídeo con PD](images/pd.gif)
+
+Siendo sus gráficas de posición, velocidad y aceleración:
 
 ![Gráficas con PD](images/graf_pd.png)
 
